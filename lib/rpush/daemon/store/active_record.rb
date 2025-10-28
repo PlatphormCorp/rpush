@@ -70,7 +70,7 @@ module Rpush
           ids = []
           notifications.each do |n|
             mark_retryable(n, deliver_after, persist: false)
-            ids << n.id
+            ids << n.id unless n.failed
           end
           mark_ids_retryable(ids, deliver_after)
         end
