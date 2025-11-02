@@ -48,6 +48,13 @@ module Rpush
 
         def mark_retryable(notification, deliver_after, opts = {})
           opts = DEFAULT_MARK_OPTIONS.dup.merge(opts)
+
+          # Check if max_retries is configured and if notification has exceeded it
+          if Rpush.config.max_retries && notification.retries >= Rpush.config.max_retries
+            mark_failed(notification, nil, "Notification failed to be delivered after #{notification.retries} retries (max: #{Rpush.config.max_retries}).", Time.now, opts)
+            return
+          end
+
           notification.processing = false
           notification.retries += 1
           notification.deliver_after = deliver_after
@@ -63,7 +70,7 @@ module Rpush
           ids = []
           notifications.each do |n|
             mark_retryable(n, deliver_after, persist: false)
-            ids << n.id
+            ids << n.id unless n.failed
           end
           mark_ids_retryable(ids, deliver_after)
         end
